@@ -1,0 +1,237 @@
+import { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import type { RestroomWithDistance, Location } from '../types';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix for default marker icons in React-Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom user location icon with pulsing effect
+const userIcon = new L.DivIcon({
+  html: `
+    <div style="position: relative; width: 40px; height: 40px;">
+      <!-- Pulsing rings -->
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: rgba(124, 58, 237, 0.3);
+        animation: pulse 2s infinite;
+      "></div>
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: rgba(124, 58, 237, 0.5);
+        animation: pulse 2s infinite 0.5s;
+      "></div>
+      <!-- Main dot -->
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #7c3aed;
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      "></div>
+    </div>
+    <style>
+      @keyframes pulse {
+        0% {
+          transform: translate(-50%, -50%) scale(0.8);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(1.5);
+          opacity: 0;
+        }
+      }
+    </style>
+  `,
+  className: '',
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -20],
+});
+
+// Custom restroom icons based on accessibility
+const createRestroomIcon = (restroom: RestroomWithDistance) => {
+  const color = restroom.isWheelchairAccessible ? '#10b981' : '#6366f1';
+  const symbol = restroom.isWheelchairAccessible ? '♿' : '🚽';
+  
+  return new L.DivIcon({
+    html: `
+      <div style="
+        background-color: ${color};
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 3px solid white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      ">${symbol}</div>
+    `,
+    className: '',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -18],
+  });
+};
+
+interface RecenterMapProps {
+  center: [number, number];
+}
+
+// Component to recenter map when location changes
+function RecenterMap({ center }: RecenterMapProps) {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [center, map]);
+  
+  return null;
+}
+
+interface MapViewProps {
+  userLocation: Location;
+  restrooms: RestroomWithDistance[];
+  onRestroomClick: (restroom: RestroomWithDistance) => void;
+}
+
+const MapView = ({ userLocation, restrooms, onRestroomClick }: MapViewProps) => {
+  const center: [number, number] = [userLocation.latitude, userLocation.longitude];
+
+  // Function to recenter map
+  const recenterMap = () => {
+    const map = document.querySelector('.leaflet-container') as any;
+    if (map && map._leaflet_id) {
+      const leafletMap = (window as any).L?.map(map._leaflet_id);
+      if (leafletMap) {
+        leafletMap.setView(center, 16);
+      }
+    }
+  };
+
+  return (
+    <div className="w-full h-full relative">
+      <MapContainer
+        center={center}
+        zoom={16}
+        className="w-full h-full rounded-lg"
+        zoomControl={true}
+        scrollWheelZoom={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        <RecenterMap center={center} />
+
+        {/* User Location Marker */}
+        <Marker position={center} icon={userIcon}>
+          <Popup>
+            <div className="text-center font-semibold text-purple-600">
+              📍 Your Location
+              <div className="text-xs text-gray-600 mt-1">We're here!</div>
+            </div>
+          </Popup>
+        </Marker>
+
+        {/* Restroom Markers */}
+        {restrooms.map((restroom) => (
+          <Marker
+            key={restroom.id}
+            position={[restroom.location.latitude, restroom.location.longitude]}
+            icon={createRestroomIcon(restroom)}
+            eventHandlers={{
+              click: () => onRestroomClick(restroom),
+            }}
+          >
+            <Popup>
+              <div className="min-w-[200px]">
+                <h3 className="font-bold text-sm mb-1">{restroom.buildingName}</h3>
+                <p className="text-xs text-gray-600 mb-2">{restroom.floor}</p>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {restroom.isWheelchairAccessible && (
+                    <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded">♿</span>
+                  )}
+                  {restroom.isGenderNeutral && (
+                    <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-800 rounded">🚻</span>
+                  )}
+                  {!restroom.requiresWildcard && (
+                    <span className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded">🔓</span>
+                  )}
+                </div>
+                <button
+                  onClick={() => onRestroomClick(restroom)}
+                  className="w-full text-xs bg-purple-600 text-white py-1.5 px-3 rounded hover:bg-purple-700"
+                >
+                  View Details
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+
+      {/* Map Legend */}
+      <div className="absolute bottom-3 right-3 bg-white rounded-lg shadow-lg p-2.5 text-xs z-[1000]">
+        <div className="font-semibold mb-1.5 text-gray-900">Legend</div>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-5 h-5 rounded-full bg-purple-600 border-2 border-white relative flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-white"></div>
+          </div>
+          <span className="text-gray-700">You</span>
+        </div>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-5 h-5 rounded-full bg-green-500 border-2 border-white flex items-center justify-center text-[10px]">♿</div>
+          <span className="text-gray-700">Accessible</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-[10px]">🚽</div>
+          <span className="text-gray-700">Standard</span>
+        </div>
+      </div>
+
+      {/* Recenter Button */}
+      <div className="absolute bottom-3 left-3 z-[1000]">
+        <button
+          onClick={recenterMap}
+          className="bg-white hover:bg-purple-50 rounded-lg shadow-lg p-2.5 transition-colors border-2 border-purple-200 hover:border-purple-400"
+          aria-label="Recenter map on your location"
+          title="Find my location"
+        >
+          <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default MapView;
