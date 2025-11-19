@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import type { RestroomWithDistance, Location } from '../types';
 import L from 'leaflet';
@@ -106,9 +106,41 @@ interface RecenterMapProps {
 // Component to recenter map when location changes
 function RecenterMap({ center, zoom }: RecenterMapProps) {
   const map = useMap();
+  const prevCenterRef = useRef<[number, number] | null>(null);
+  const isAnimatingRef = useRef(false);
   
   useEffect(() => {
-    map.setView(center, zoom || map.getZoom(), { animate: true, duration: 0.5 });
+    // Skip if already animating
+    if (isAnimatingRef.current) {
+      return;
+    }
+
+    const prevCenter = prevCenterRef.current;
+    const currentCenter = map.getCenter();
+    const threshold = 0.00001; // Very small threshold
+    
+    // Check if center actually changed
+    const centerChanged = !prevCenter ||
+      Math.abs(currentCenter.lat - center[0]) > threshold ||
+      Math.abs(currentCenter.lng - center[1]) > threshold;
+    
+    if (centerChanged) {
+      isAnimatingRef.current = true;
+      prevCenterRef.current = center;
+      
+      // Use flyTo with proper callback
+      map.flyTo(center, zoom || map.getZoom(), {
+        duration: 1,
+        easeLinearity: 0.25
+      });
+      
+      // Reset animating flag after animation completes
+      setTimeout(() => {
+        isAnimatingRef.current = false;
+      }, 1000);
+    } else if (zoom && Math.abs(map.getZoom() - zoom) > 0.5) {
+      map.setZoom(zoom);
+    }
   }, [center, zoom, map]);
   
   return null;
@@ -147,6 +179,12 @@ interface MapViewProps {
 }
 
 const MapView = ({ userLocation, restrooms, onRestroomClick, selectedRestroom }: MapViewProps) => {
+  // Memoize the initial center to prevent MapContainer from re-rendering
+  const initialCenter: [number, number] = useMemo(
+    () => [userLocation.latitude, userLocation.longitude],
+    [] // Empty deps - only set once
+  );
+
   // Use selected restroom location if available, otherwise user location
   const center: [number, number] = selectedRestroom
     ? [selectedRestroom.location.latitude, selectedRestroom.location.longitude]
@@ -157,19 +195,26 @@ const MapView = ({ userLocation, restrooms, onRestroomClick, selectedRestroom }:
   return (
     <div className="w-full h-full relative z-0" style={{ minHeight: '400px' }}>
       <MapContainer
-        center={[userLocation.latitude, userLocation.longitude]}
+        center={initialCenter}
         zoom={16}
         className="w-full h-full rounded-lg"
         style={{ height: '100%', width: '100%', minHeight: '400px', zIndex: 0 }}
         zoomControl={true}
         scrollWheelZoom={true}
         attributionControl={true}
+        whenReady={() => {
+          console.log('Map is ready');
+        }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           maxZoom={19}
           minZoom={1}
+          keepBuffer={4}
+          updateWhenIdle={false}
+          updateWhenZooming={false}
+          updateInterval={200}
         />
         
         <RecenterMap center={center} zoom={zoom} />

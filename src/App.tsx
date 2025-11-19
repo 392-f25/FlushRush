@@ -161,9 +161,9 @@ const App = () => {
     <div className="h-screen flex flex-col bg-white overflow-hidden">
       {/* Compact Header */}
       <header className="bg-purple-600 text-white shadow-lg flex-shrink-0">
-        <div className="px-4 py-3 flex justify-between items-center">
+        <div className="px-4 py-2 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="FlushRush Logo" className="h-10 w-10 object-contain" />
+            <img src={logo} alt="FlushRush Logo" className="h-20 w-20 object-contain" />
             <div>
               <h1 className="text-xl font-bold">FlushRush</h1>
               <p className="text-xs text-purple-100">Northwestern Campus</p>
