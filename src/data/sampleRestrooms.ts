@@ -8,8 +8,8 @@ export const sampleRestrooms: Restroom[] = [
     buildingName: 'Technological Institute',
     floor: '1st Floor',
     location: {
-      latitude: 42.0575,
-      longitude: -87.6760,
+      latitude: 42.057849751535045,
+      longitude: -87.6758684427529,
     },
     isWheelchairAccessible: true,
     isGenderNeutral: false,
@@ -25,8 +25,8 @@ export const sampleRestrooms: Restroom[] = [
     buildingName: 'Norris University Center',
     floor: 'Ground Floor',
     location: {
-      latitude: 42.0525,
-      longitude: -87.6735,
+      latitude: 42.0538565198848,
+      longitude: -87.67286112088877
     },
     isWheelchairAccessible: true,
     isGenderNeutral: true,
@@ -42,8 +42,8 @@ export const sampleRestrooms: Restroom[] = [
     buildingName: 'Main Library',
     floor: '2nd Floor',
     location: {
-      latitude: 39.0552,
-      longitude: -87.6725,
+      latitude: 42.053437095890374, 
+      longitude: -87.6741069441599
     },
     isWheelchairAccessible: true,
     isGenderNeutral: false,
@@ -59,8 +59,8 @@ export const sampleRestrooms: Restroom[] = [
     buildingName: 'Kresge Centennial Hall',
     floor: 'Basement',
     location: {
-      latitude: 42.0565,
-      longitude: -87.6748,
+      latitude: 42.05201366755738, 
+      longitude: -87.67508484415995
     },
     isWheelchairAccessible: false,
     isGenderNeutral: false,
@@ -75,8 +75,8 @@ export const sampleRestrooms: Restroom[] = [
     buildingName: 'Mudd Library',
     floor: '3rd Floor',
     location: {
-      latitude: 38.0547,
-      longitude: -87.6734,
+      latitude:42.05840729057804, 
+      longitude: -87.6743465481133
     },
     isWheelchairAccessible: true,
     isGenderNeutral: true,
@@ -88,28 +88,12 @@ export const sampleRestrooms: Restroom[] = [
   },
   {
     id: '6',
-    name: 'Main Floor',
-    buildingName: 'Rebecca Crown Center',
-    floor: '1st Floor',
-    location: {
-      latitude: 42.0592,
-      longitude: -87.6771,
-    },
-    isWheelchairAccessible: true,
-    isGenderNeutral: false,
-    requiresWildcard: true,
-    status: 'open',
-    lastUpdated: new Date(),
-    photoUrls: [],
-  },
-  {
-    id: '7',
     name: 'West Wing Ground Floor',
     buildingName: 'Blomquist Recreation Center',
     floor: 'Ground Floor',
     location: {
-      latitude: 42.0530,
-      longitude: -87.6772,
+      latitude: 42.05464061881015, 
+      longitude: -87.6780409404497
     },
     isWheelchairAccessible: true,
     isGenderNeutral: true,
@@ -120,13 +104,13 @@ export const sampleRestrooms: Restroom[] = [
     photoUrls: [],
   },
   {
-    id: '8',
+    id: '7',
     name: 'Second Floor East',
     buildingName: 'Frances Searle Building',
     floor: '2nd Floor',
     location: {
-      latitude: 42.0558,
-      longitude: -87.6743,
+      latitude: 42.0586482730594, 
+      longitude: -87.67355831887622
     },
     isWheelchairAccessible: true,
     isGenderNeutral: false,
