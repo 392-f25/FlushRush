@@ -7,12 +7,14 @@ import FilterChips from './components/FilterChips';
 import RestroomCard from './components/RestroomCard';
 import CompactRestroomCard from './components/CompactRestroomCard';
 import BottomSheet from './components/BottomSheet';
+import SidePanel from './components/SidePanel';
 import RestroomDetail from './components/RestroomDetail';
 import AddReviewForm from './components/AddReviewForm';
 import AddBathroomForm from './components/AddBathroomForm';
 import MapView from './components/MapView';
 import { db } from './firebase';
 import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import logo from './assets/image.png';
 
 const App = () => {
   const [userLocation, setUserLocation] = useState<Location | null>(null);
@@ -153,15 +155,19 @@ const App = () => {
   };
 
   const nearestRestroom = filteredRestrooms[0];
+  const [showNearestBanner, setShowNearestBanner] = useState(true);
 
   return (
     <div className="h-screen flex flex-col bg-white overflow-hidden">
       {/* Compact Header */}
       <header className="bg-purple-600 text-white shadow-lg flex-shrink-0">
         <div className="px-4 py-3 flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">🚽 FlushRush</h1>
-            <p className="text-xs text-purple-100">Northwestern Campus</p>
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="FlushRush Logo" className="h-10 w-10 object-contain" />
+            <div>
+              <h1 className="text-xl font-bold">FlushRush</h1>
+              <p className="text-xs text-purple-100">Northwestern Campus</p>
+            </div>
           </div>
           <button
             onClick={() => setShowListView(!showListView)}
@@ -197,19 +203,20 @@ const App = () => {
 
         {/* Map or List View - Takes remaining space */}
         {!showListView && userLocation ? (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Map Section - 50% of remaining space */}
-            <div className="h-1/2 relative">
+          <div className="flex-1 flex overflow-hidden" style={{ minHeight: '500px' }}>
+            {/* Map Section - 65% of width */}
+            <div className="w-[65%] relative h-full">
               <MapView
                 userLocation={userLocation}
                 restrooms={filteredRestrooms}
                 onRestroomClick={setSelectedRestroom}
+                selectedRestroom={selectedRestroom}
               />
               
               {/* Floating Nearest Restroom Card - More compact */}
-              {nearestRestroom && !isLoadingLocation && (
+              {nearestRestroom && !isLoadingLocation && showNearestBanner && (
                 <div className="absolute top-3 left-3 right-3 bg-white rounded-lg shadow-xl p-3 z-[1000] border-2 border-purple-400">
-                  <div className="flex justify-between items-center gap-2">
+                  <div className="flex justify-between items-start gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-purple-600 font-bold mb-0.5">🎯 NEAREST</div>
                       <h3 className="font-bold text-sm truncate">{nearestRestroom.buildingName}</h3>
@@ -224,25 +231,34 @@ const App = () => {
                         <span className="text-gray-600">{nearestRestroom.estimatedWalkTime} min</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setSelectedRestroom(nearestRestroom)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-2 rounded-lg text-xs whitespace-nowrap transition-colors flex-shrink-0"
-                    >
-                      View
-                    </button>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => setSelectedRestroom(nearestRestroom)}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-2 rounded-lg text-xs whitespace-nowrap transition-colors"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => setShowNearestBanner(false)}
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-2 py-2 rounded-lg text-xs transition-colors flex items-center justify-center"
+                        aria-label="Close banner"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
             
-            {/* Nearby List Section - 50% of remaining space */}
-            <div className="h-1/2 bg-gradient-to-b from-gray-50 to-white border-t-2 border-gray-200 overflow-hidden flex flex-col">
+            {/* Bathroom List Section - 35% of width */}
+            <div className="w-[35%] bg-gradient-to-b from-gray-50 to-white border-l-2 border-gray-200 overflow-hidden flex flex-col">
               <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
                 <h2 className="text-sm font-bold text-gray-900">
                   📍 Nearby Restrooms ({filteredRestrooms.length})
                 </h2>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 py-3">
+              <div className="flex-1 overflow-y-auto px-3 py-3">
                 {filteredRestrooms.length === 0 ? (
                   <div className="bg-gray-50 rounded-lg p-6 text-center">
                     <p className="text-gray-600 text-sm mb-1">No restrooms match your filters</p>
@@ -250,7 +266,7 @@ const App = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {filteredRestrooms.slice(0, 10).map((restroom) => (
+                    {filteredRestrooms.slice(0, 20).map((restroom) => (
                       <CompactRestroomCard
                         key={restroom.id}
                         restroom={restroom}
@@ -290,20 +306,39 @@ const App = () => {
         )}
       </main>
 
-      {/* Restroom Detail Bottom Sheet */}
-      <BottomSheet
-        isOpen={selectedRestroom !== null && !showReviewForm}
-        onClose={() => setSelectedRestroom(null)}
-      >
-        {selectedRestroom && (
-          <RestroomDetail
-            restroom={selectedRestroom}
-            reviews={reviews.filter((r) => r.restroomId === selectedRestroom.id)}
-            onClose={() => setSelectedRestroom(null)}
-            onAddReview={() => setShowReviewForm(true)}
-          />
-        )}
-      </BottomSheet>
+      {/* Restroom Detail Side Panel (for map view) */}
+      {!showListView && (
+        <SidePanel
+          isOpen={selectedRestroom !== null && !showReviewForm}
+          onClose={() => setSelectedRestroom(null)}
+        >
+          {selectedRestroom && (
+            <RestroomDetail
+              restroom={selectedRestroom}
+              reviews={reviews.filter((r) => r.restroomId === selectedRestroom.id)}
+              onClose={() => setSelectedRestroom(null)}
+              onAddReview={() => setShowReviewForm(true)}
+            />
+          )}
+        </SidePanel>
+      )}
+
+      {/* Restroom Detail Bottom Sheet (for list view) */}
+      {showListView && (
+        <BottomSheet
+          isOpen={selectedRestroom !== null && !showReviewForm}
+          onClose={() => setSelectedRestroom(null)}
+        >
+          {selectedRestroom && (
+            <RestroomDetail
+              restroom={selectedRestroom}
+              reviews={reviews.filter((r) => r.restroomId === selectedRestroom.id)}
+              onClose={() => setSelectedRestroom(null)}
+              onAddReview={() => setShowReviewForm(true)}
+            />
+          )}
+        </BottomSheet>
+      )}
 
       {/* Add Review Bottom Sheet */}
       <BottomSheet
@@ -336,7 +371,7 @@ const App = () => {
       {/* Floating Add Button */}
       <button
         onClick={() => setShowAddBathroomForm(true)}
-        className="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white rounded-full w-16 h-16 shadow-2xl flex items-center justify-center text-3xl transition-all duration-200 hover:scale-110 z-[2000]"
+        className="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white rounded-full w-16 h-16 shadow-2xl flex items-center justify-center text-3xl transition-all duration-200 hover:scale-110 z-[9000]"
         aria-label="Add new restroom"
         title="Add a restroom"
       >
@@ -345,7 +380,7 @@ const App = () => {
 
       {/* Loading indicator for restrooms */}
       {isLoadingRestrooms && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow-lg z-[2000] border-2 border-purple-400">
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow-lg z-[9000] border-2 border-purple-400">
           <p className="text-sm text-purple-600 font-medium">Loading restrooms...</p>
         </div>
       )}

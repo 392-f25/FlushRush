@@ -42,7 +42,7 @@ export const sampleRestrooms: Restroom[] = [
     buildingName: 'Main Library',
     floor: '2nd Floor',
     location: {
-      latitude: 42.0552,
+      latitude: 39.0552,
       longitude: -87.6725,
     },
     isWheelchairAccessible: true,

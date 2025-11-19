@@ -44,18 +44,18 @@ const RestroomCard = ({ restroom, onClick }: RestroomCardProps) => {
 
       <div className="flex flex-wrap gap-2">
         {restroom.isWheelchairAccessible && (
-          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
-            ♿ Accessible
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+            <span className="text-lg">♿</span> Accessible
           </span>
         )}
         {restroom.isGenderNeutral && (
-          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-xs font-medium">
-            🚻 Gender Neutral
+          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-sm font-medium">
+            <span className="text-lg">🚻</span> Gender Neutral
           </span>
         )}
         {!restroom.requiresWildcard && (
-          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md text-xs font-medium">
-            🔓 No Wildcard
+          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md text-sm font-medium">
+            <span className="text-lg">🔓</span> No Wildcard
           </span>
         )}
       </div>

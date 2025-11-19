@@ -26,29 +26,30 @@ const BottomSheet = ({ isOpen, onClose, children, title }: BottomSheetProps) => 
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+        className="fixed inset-0 bg-purple-100 bg-opacity-40 z-[9998] transition-opacity backdrop-blur-md"
         onClick={onClose}
         aria-hidden="true"
       />
       
-      {/* Bottom Sheet */}
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 rounded-t-3xl">
-          <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-3" />
-          {title && (
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </div>
-          )}
+      {/* Centered Modal */}
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="bg-gradient-to-b from-white to-purple-50 rounded-2xl shadow-2xl max-h-[85vh] w-full max-w-2xl overflow-y-auto border-4 border-purple-400">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 rounded-t-2xl">
+            {title && (
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+                <button
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="p-4">{children}</div>
         </div>
-        <div className="p-4">{children}</div>
       </div>
     </>
   );

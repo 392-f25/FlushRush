@@ -39,13 +39,13 @@ const CompactRestroomCard = ({ restroom, onClick }: CompactRestroomCardProps) =>
           </span>
           <div className="flex gap-1">
             {restroom.isWheelchairAccessible && (
-              <span className="text-xs">♿</span>
+              <span className="text-base">♿</span>
             )}
             {restroom.isGenderNeutral && (
-              <span className="text-xs">🚻</span>
+              <span className="text-base">🚻</span>
             )}
             {!restroom.requiresWildcard && (
-              <span className="text-xs">🔓</span>
+              <span className="text-base">🔓</span>
             )}
           </div>
         </div>

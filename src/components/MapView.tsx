@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import type { RestroomWithDistance, Location } from '../types';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
 // Fix for default marker icons in React-Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -101,57 +100,82 @@ const createRestroomIcon = (restroom: RestroomWithDistance) => {
 
 interface RecenterMapProps {
   center: [number, number];
+  zoom?: number;
 }
 
 // Component to recenter map when location changes
-function RecenterMap({ center }: RecenterMapProps) {
+function RecenterMap({ center, zoom }: RecenterMapProps) {
   const map = useMap();
   
   useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
+    map.setView(center, zoom || map.getZoom(), { animate: true, duration: 0.5 });
+  }, [center, zoom, map]);
   
   return null;
+}
+
+// Component for recenter button
+function RecenterButton({ userLocation }: { userLocation: Location }) {
+  const map = useMap();
+  
+  const handleRecenter = () => {
+    map.setView([userLocation.latitude, userLocation.longitude], 16, { animate: true, duration: 0.5 });
+  };
+  
+  return (
+    <div className="absolute bottom-3 left-3 z-[1000]">
+      <button
+        onClick={handleRecenter}
+        className="bg-white hover:bg-purple-50 rounded-lg shadow-lg p-2.5 transition-colors border-2 border-purple-200 hover:border-purple-400"
+        aria-label="Recenter map on your location"
+        title="Find my location"
+      >
+        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+    </div>
+  );
 }
 
 interface MapViewProps {
   userLocation: Location;
   restrooms: RestroomWithDistance[];
   onRestroomClick: (restroom: RestroomWithDistance) => void;
+  selectedRestroom?: RestroomWithDistance | null;
 }
 
-const MapView = ({ userLocation, restrooms, onRestroomClick }: MapViewProps) => {
-  const center: [number, number] = [userLocation.latitude, userLocation.longitude];
-
-  // Function to recenter map
-  const recenterMap = () => {
-    const map = document.querySelector('.leaflet-container') as any;
-    if (map && map._leaflet_id) {
-      const leafletMap = (window as any).L?.map(map._leaflet_id);
-      if (leafletMap) {
-        leafletMap.setView(center, 16);
-      }
-    }
-  };
+const MapView = ({ userLocation, restrooms, onRestroomClick, selectedRestroom }: MapViewProps) => {
+  // Use selected restroom location if available, otherwise user location
+  const center: [number, number] = selectedRestroom
+    ? [selectedRestroom.location.latitude, selectedRestroom.location.longitude]
+    : [userLocation.latitude, userLocation.longitude];
+  
+  const zoom = selectedRestroom ? 18 : 16;
 
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative z-0" style={{ minHeight: '400px' }}>
       <MapContainer
-        center={center}
+        center={[userLocation.latitude, userLocation.longitude]}
         zoom={16}
         className="w-full h-full rounded-lg"
+        style={{ height: '100%', width: '100%', minHeight: '400px', zIndex: 0 }}
         zoomControl={true}
         scrollWheelZoom={true}
+        attributionControl={true}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          maxZoom={19}
+          minZoom={1}
         />
         
-        <RecenterMap center={center} />
+        <RecenterMap center={center} zoom={zoom} />
 
         {/* User Location Marker */}
-        <Marker position={center} icon={userIcon}>
+        <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userIcon}>
           <Popup>
             <div className="text-center font-semibold text-purple-600">
               📍 Your Location
@@ -195,6 +219,9 @@ const MapView = ({ userLocation, restrooms, onRestroomClick }: MapViewProps) => 
             </Popup>
           </Marker>
         ))}
+        
+        {/* Recenter Button */}
+        <RecenterButton userLocation={userLocation} />
       </MapContainer>
 
       {/* Map Legend */}
@@ -214,21 +241,6 @@ const MapView = ({ userLocation, restrooms, onRestroomClick }: MapViewProps) => 
           <div className="w-5 h-5 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-[10px]">🚽</div>
           <span className="text-gray-700">Standard</span>
         </div>
-      </div>
-
-      {/* Recenter Button */}
-      <div className="absolute bottom-3 left-3 z-[1000]">
-        <button
-          onClick={recenterMap}
-          className="bg-white hover:bg-purple-50 rounded-lg shadow-lg p-2.5 transition-colors border-2 border-purple-200 hover:border-purple-400"
-          aria-label="Recenter map on your location"
-          title="Find my location"
-        >
-          <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </button>
       </div>
     </div>
   );
