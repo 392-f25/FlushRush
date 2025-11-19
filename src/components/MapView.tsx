@@ -136,6 +136,12 @@ function RecenterMap({ center, zoom }: RecenterMapProps) {
       
       // Reset animating flag after animation completes
       setTimeout(() => {
+        // Invalidate size in case the map container has changed (e.g. side panel opened)
+        try {
+          map.invalidateSize();
+        } catch (e) {
+          // ignore
+        }
         isAnimatingRef.current = false;
       }, 1000);
     } else if (zoom && Math.abs(map.getZoom() - zoom) > 0.5) {

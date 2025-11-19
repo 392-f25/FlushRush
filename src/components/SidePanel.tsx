@@ -24,9 +24,11 @@ const SidePanel = ({ isOpen, onClose, children, title }: SidePanelProps) => {
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-30 z-[9998] transition-opacity ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 z-[9998] transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        style={{
+          backgroundColor: isOpen ? 'rgba(0,0,0,0.3)' : 'transparent',
+          pointerEvents: isOpen ? 'auto' : 'none',
+        }}
         onClick={onClose}
         aria-hidden="true"
       />
