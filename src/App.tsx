@@ -12,9 +12,8 @@ import RestroomDetail from './components/RestroomDetail';
 import AddReviewForm from './components/AddReviewForm';
 import AddBathroomForm from './components/AddBathroomForm';
 import MapView from './components/MapView';
-import { db, rtdb } from './firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { ref as rtdbRef, push as rtdbPush, set as rtdbSet, serverTimestamp as rtdbServerTimestamp } from 'firebase/database';
+import { rtdb, firebaseConfig } from './firebase';
+import { get as rtdbGet, ref as rtdbRef, push as rtdbPush, set as rtdbSet, serverTimestamp as rtdbServerTimestamp } from 'firebase/database';
 import logo from './assets/image.png';
 
 const App = () => {
@@ -33,7 +32,7 @@ const App = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [showListView, setShowListView] = useState(false);
-  const [allRestrooms, setAllRestrooms] = useState<Restroom[]>(sampleRestrooms);
+  const [allRestrooms, setAllRestrooms] = useState<Restroom[]>(import.meta.env.DEV ? sampleRestrooms : []);
   const [isLoadingRestrooms, setIsLoadingRestrooms] = useState(false);
 
   // Get user location on mount
@@ -56,39 +55,51 @@ const App = () => {
       });
   }, []);
 
-  // Load restrooms from Firestore
   useEffect(() => {
     const loadRestrooms = async () => {
       setIsLoadingRestrooms(true);
+      console.log('Firebase projectId =', firebaseConfig.projectId, 'databaseURL =', firebaseConfig.databaseURL);
       try {
-        const restroomsRef = collection(db, 'restrooms');
-        const q = query(restroomsRef, orderBy('lastUpdated', 'desc'));
-        const querySnapshot = await getDocs(q);
-        
-        const firestoreRestrooms: Restroom[] = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            name: data.name,
-            buildingName: data.buildingName,
-            floor: data.floor,
-            location: data.location,
-            isWheelchairAccessible: data.isWheelchairAccessible,
-            isGenderNeutral: data.isGenderNeutral,
-            requiresWildcard: data.requiresWildcard,
-            photoUrls: data.photoUrls || [],
-            accessibilityNotes: data.accessibilityNotes,
-            status: data.status || 'open',
-            lastUpdated: data.lastUpdated?.toDate() || new Date(),
-          };
-        });
+        const listRef = rtdbRef(rtdb, 'restrooms');
+        const snap = await rtdbGet(listRef);
+        const rtdbData = snap && snap.exists() ? snap.val() : null;
 
-        // Combine sample data with user-contributed data
-        setAllRestrooms([...sampleRestrooms, ...firestoreRestrooms]);
+        const rtdbRestrooms: Restroom[] = [];
+        if (rtdbData) {
+          Object.keys(rtdbData).forEach((key) => {
+            const item = rtdbData[key];
+            rtdbRestrooms.push({
+              id: key,
+              name: item.name,
+              buildingName: item.buildingName,
+              floor: item.floor,
+              location: item.location,
+              isWheelchairAccessible: item.isWheelchairAccessible,
+              isGenderNeutral: item.isGenderNeutral,
+              requiresWildcard: item.requiresWildcard,
+              photoUrls: item.photoUrls || [],
+              accessibilityNotes: item.accessibilityNotes,
+              status: item.status || 'open',
+              lastUpdated: item.lastUpdated ? new Date(item.lastUpdated) : new Date(),
+            });
+          });
+        }
+
+        console.log('RTDB: loaded restrooms count =', rtdbRestrooms.length);
+        console.log('RTDB restrooms:', rtdbRestrooms.map(r => ({ id: r.id, name: r.name })));
+
+        if (import.meta.env.DEV) {
+          setAllRestrooms([...sampleRestrooms, ...rtdbRestrooms]);
+        } else {
+          setAllRestrooms(rtdbRestrooms);
+        }
       } catch (error) {
-        console.error('Error loading restrooms:', error);
-        // Fall back to sample data
-        setAllRestrooms(sampleRestrooms);
+        console.error('Error loading restrooms from RTDB:', error);
+        if (import.meta.env.DEV) {
+          setAllRestrooms(sampleRestrooms);
+        } else {
+          setAllRestrooms([]);
+        }
       } finally {
         setIsLoadingRestrooms(false);
       }
