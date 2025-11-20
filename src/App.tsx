@@ -13,7 +13,7 @@ import AddReviewForm from './components/AddReviewForm';
 import AddBathroomForm from './components/AddBathroomForm';
 import MapView from './components/MapView';
 import { db, rtdb } from './firebase';
-import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { ref as rtdbRef, push as rtdbPush, set as rtdbSet, serverTimestamp as rtdbServerTimestamp } from 'firebase/database';
 import logo from './assets/image.png';
 
