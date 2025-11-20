@@ -146,7 +146,7 @@ const App = () => {
         console.error('RTDB write error:', rtdbError);
       }
 
-      const docRef = await addDoc(collection(db, 'restrooms'), newRestroom);
+      // const docRef = await addDoc(collection(db, 'restrooms'), newRestroom);
 
       // const restroomWithId: Restroom = {
       //   ...newRestroom,
