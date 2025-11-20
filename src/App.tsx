@@ -12,8 +12,9 @@ import RestroomDetail from './components/RestroomDetail';
 import AddReviewForm from './components/AddReviewForm';
 import AddBathroomForm from './components/AddBathroomForm';
 import MapView from './components/MapView';
-import { db } from './firebase';
+import { db, rtdb } from './firebase';
 import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { ref as rtdbRef, push as rtdbPush, set as rtdbSet, serverTimestamp as rtdbServerTimestamp } from 'firebase/database';
 import logo from './assets/image.png';
 
 const App = () => {
@@ -133,19 +134,29 @@ const App = () => {
         lastUpdated: new Date(),
         photoUrls: [],
       };
+      try {
+        const listRef = rtdbRef(rtdb, 'restrooms');
+        const newRef = rtdbPush(listRef);
+        await rtdbSet(newRef, {
+          ...newRestroom,
+          createdAt: rtdbServerTimestamp(),
+        });
+        console.log('RTDB: Restroom added with key', newRef.key);
+      } catch (rtdbError) {
+        console.error('RTDB write error:', rtdbError);
+      }
 
-      // Add to Firestore
       const docRef = await addDoc(collection(db, 'restrooms'), newRestroom);
-      
-      // Add to local state
-      const restroomWithId: Restroom = {
-        ...newRestroom,
-        id: docRef.id,
-      };
-      
-      setAllRestrooms([...allRestrooms, restroomWithId]);
-      setShowAddBathroomForm(false);
-      
+
+      // const restroomWithId: Restroom = {
+      //   ...newRestroom,
+      //   id: docRef.id,
+      // };
+
+
+      // setAllRestrooms([...allRestrooms, restroomWithId]);
+      // setShowAddBathroomForm(false);
+
       // Show success message (you could add a toast notification here)
       alert('✅ Restroom added successfully! Thank you for contributing!');
     } catch (error) {
