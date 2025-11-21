@@ -32,7 +32,7 @@ const App = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [showListView, setShowListView] = useState(false);
-  const [allRestrooms, setAllRestrooms] = useState<Restroom[]>(import.meta.env.DEV ? sampleRestrooms : []);
+  const [allRestrooms, setAllRestrooms] = useState<Restroom[]>(sampleRestrooms);
   const [isLoadingRestrooms, setIsLoadingRestrooms] = useState(false);
 
   // Get user location on mount
@@ -88,18 +88,10 @@ const App = () => {
         console.log('RTDB: loaded restrooms count =', rtdbRestrooms.length);
         console.log('RTDB restrooms:', rtdbRestrooms.map(r => ({ id: r.id, name: r.name })));
 
-        if (import.meta.env.DEV) {
-          setAllRestrooms([...sampleRestrooms, ...rtdbRestrooms]);
-        } else {
-          setAllRestrooms(rtdbRestrooms);
-        }
+        setAllRestrooms([...sampleRestrooms, ...rtdbRestrooms]);
       } catch (error) {
         console.error('Error loading restrooms from RTDB:', error);
-        if (import.meta.env.DEV) {
-          setAllRestrooms(sampleRestrooms);
-        } else {
-          setAllRestrooms([]);
-        }
+        setAllRestrooms(sampleRestrooms);
       } finally {
         setIsLoadingRestrooms(false);
       }
