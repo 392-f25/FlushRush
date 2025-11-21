@@ -140,28 +140,25 @@ const App = () => {
       try {
         const listRef = rtdbRef(rtdb, 'restrooms');
         const newRef = rtdbPush(listRef);
+
+        console.log('RTDB: writing restroom object:', {
+          ...newRestroom,
+          createdAt: 'serverTimestamp',
+        });
+
         await rtdbSet(newRef, {
           ...newRestroom,
           createdAt: rtdbServerTimestamp(),
         });
+
         console.log('RTDB: Restroom added with key', newRef.key);
+
+        alert('✅ Restroom added successfully! Thank you for contributing!');
       } catch (rtdbError) {
         console.error('RTDB write error:', rtdbError);
+        alert('❌ Failed to save restroom to database. Please try again.');
+        throw rtdbError;
       }
-
-      // const docRef = await addDoc(collection(db, 'restrooms'), newRestroom);
-
-      // const restroomWithId: Restroom = {
-      //   ...newRestroom,
-      //   id: docRef.id,
-      // };
-
-
-      // setAllRestrooms([...allRestrooms, restroomWithId]);
-      // setShowAddBathroomForm(false);
-
-      // Show success message (you could add a toast notification here)
-      alert('✅ Restroom added successfully! Thank you for contributing!');
     } catch (error) {
       console.error('Error adding restroom:', error);
       alert('❌ Failed to add restroom. Please try again.');
