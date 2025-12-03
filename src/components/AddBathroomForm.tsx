@@ -49,7 +49,7 @@ const AddBathroomForm = ({ userLocation, onSubmit, onCancel }: AddBathroomFormPr
       isWheelchairAccessible,
       isGenderNeutral,
       requiresWildcard,
-      accessibilityNotes: accessibilityNotes.trim() || undefined,
+      accessibilityNotes: accessibilityNotes.trim() || '',
     });
   };
 

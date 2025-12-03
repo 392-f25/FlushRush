@@ -4,11 +4,12 @@ import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
+import { getDatabase } from 'firebase/database';
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyBpCK4TIWJ_jDAPt9-7oZIwk5Ig2Dd1RYA",
   authDomain: "flushrush-a2eaa.firebaseapp.com",
+  databaseURL: "https://flushrush-a2eaa-default-rtdb.firebaseio.com",
   projectId: "flushrush-a2eaa",
   storageBucket: "flushrush-a2eaa.firebasestorage.app",
   messagingSenderId: "170697941156",
@@ -22,5 +23,6 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
+const rtdb = getDatabase(app);
 
-export { app, analytics, db, auth, storage };
+export { app, analytics, db, auth, storage, rtdb };
