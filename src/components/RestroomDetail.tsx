@@ -1,15 +1,18 @@
-import type { RestroomWithDistance, Review } from '../types';
+import type { RestroomWithDistance, Review, Issue } from '../types';
 import { formatDistance } from '../utils/geolocation';
 import ReviewCard from '../components/ReviewCard';
 
 interface RestroomDetailProps {
   restroom: RestroomWithDistance;
   reviews: Review[];
+  issues: Issue[];
   onClose: () => void;
   onAddReview: () => void;
+  onReportIssue: () => void;
+  onResolveIssue: (issueId: string) => void;
 }
 
-const RestroomDetail = ({ restroom, reviews, onClose, onAddReview }: RestroomDetailProps) => {
+const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onReportIssue, onResolveIssue }: RestroomDetailProps) => {
   const openInMaps = () => {
     const { latitude, longitude } = restroom.location;
     const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
@@ -113,6 +116,39 @@ const RestroomDetail = ({ restroom, reviews, onClose, onAddReview }: RestroomDet
         🗺️ Open in Maps
       </button>
 
+      {/* Issues Section */}
+      <div className="mb-6">
+        <h2 className="font-semibold text-gray-900 mb-3">Reported Issues</h2>
+        {issues.length > 0 ? (
+          <div className="space-y-3">
+            {issues.map((issue) => (
+              <div key={issue.id} className="bg-red-50 border border-red-100 p-3 rounded-lg">
+                <div className="flex justify-between items-start">
+                  <p className="text-gray-800 text-sm flex-1">{issue.description}</p>
+                  {issue.isResolved ? (
+                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded ml-2 whitespace-nowrap">
+                      ✅ Resolved
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => onResolveIssue(issue.id)}
+                      className="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-medium px-2 py-1 rounded ml-2 whitespace-nowrap transition-colors"
+                    >
+                      Mark Resolved
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Reported on {issue.createdAt.toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm italic">No issues reported.</p>
+        )}
+      </div>
+
       {/* Reviews Section */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -138,7 +174,10 @@ const RestroomDetail = ({ restroom, reviews, onClose, onAddReview }: RestroomDet
       </div>
 
       {/* Report Button */}
-      <button className="w-full border-2 border-red-300 text-red-600 hover:bg-red-50 font-medium py-3 px-6 rounded-xl transition-colors duration-200">
+      <button
+        onClick={onReportIssue}
+        className="w-full border-2 border-red-300 text-red-600 hover:bg-red-50 font-medium py-3 px-6 rounded-xl transition-colors duration-200"
+      >
         🚩 Report an Issue
       </button>
     </div>

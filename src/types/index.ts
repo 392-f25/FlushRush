@@ -56,3 +56,11 @@ export interface RestroomWithDistance extends Restroom {
   distance: number; // in meters
   estimatedWalkTime: number; // in minutes
 }
+
+export interface Issue {
+  id: string;
+  restroomId: string;
+  description: string;
+  isResolved: boolean;
+  createdAt: Date;
+}

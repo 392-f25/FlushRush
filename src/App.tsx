@@ -5,6 +5,7 @@ import type {
   RestroomWithDistance,
   Review,
   Restroom,
+  Issue,
 } from "./types";
 import { getCurrentLocation } from "./utils/geolocation";
 import { applyFilters, addDistanceAndSort } from "./utils/filters";
@@ -16,6 +17,7 @@ import BottomSheet from "./components/BottomSheet";
 import SidePanel from "./components/SidePanel";
 import RestroomDetail from "./components/RestroomDetail";
 import AddReviewForm from "./components/AddReviewForm";
+import ReportIssueForm from "./components/ReportIssueForm";
 import AddBathroomForm from "./components/AddBathroomForm";
 import MapView from "./components/MapView";
 import { rtdb, firebaseConfig } from "./firebase";
@@ -24,6 +26,7 @@ import {
   ref as rtdbRef,
   push as rtdbPush,
   set as rtdbSet,
+  update as rtdbUpdate,
   serverTimestamp as rtdbServerTimestamp,
 } from "firebase/database";
 import logo from "./assets/image.png";
@@ -43,8 +46,10 @@ const App = () => {
   const [selectedRestroom, setSelectedRestroom] =
     useState<RestroomWithDistance | null>(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showReportIssueForm, setShowReportIssueForm] = useState(false);
   const [showAddBathroomForm, setShowAddBathroomForm] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [issues, setIssues] = useState<Issue[]>([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [showListView, setShowListView] = useState(false);
   const [allRestrooms, setAllRestrooms] = useState<Restroom[]>(sampleRestrooms);
@@ -106,6 +111,39 @@ const App = () => {
     };
 
     loadReviews();
+  }, []);
+
+  // Load issues on mount
+  useEffect(() => {
+    const loadIssues = async () => {
+      try {
+        const issuesRef = rtdbRef(rtdb, "issues");
+        const snap = await rtdbGet(issuesRef);
+        const rtdbData = snap && snap.exists() ? snap.val() : null;
+
+        const rtdbIssues: Issue[] = [];
+        if (rtdbData) {
+          Object.keys(rtdbData).forEach((key) => {
+            const item = rtdbData[key];
+            rtdbIssues.push({
+              id: key,
+              restroomId: item.restroomId,
+              description: item.description,
+              isResolved: item.isResolved || false,
+              createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+            });
+          });
+        }
+
+        // sort newest first
+        rtdbIssues.sort((a, b) => +b.createdAt - +a.createdAt);
+        setIssues(rtdbIssues);
+      } catch (error) {
+        console.error("Error loading issues from RTDB:", error);
+      }
+    };
+
+    loadIssues();
   }, []);
 
   useEffect(() => {
@@ -209,6 +247,62 @@ const App = () => {
         alert("❌ Failed to save review to database. Please try again.");
       }
     })();
+  };
+
+  const handleIssueSubmit = (
+    issue: Omit<Issue, "id" | "createdAt" | "isResolved">
+  ) => {
+    (async () => {
+      const newIssueBase = {
+        ...issue,
+        isResolved: false,
+      };
+
+      try {
+        const listRef = rtdbRef(rtdb, "issues");
+        const newRef = rtdbPush(listRef);
+
+        await rtdbSet(newRef, {
+          ...newIssueBase,
+          createdAt: rtdbServerTimestamp(),
+        });
+
+        // optimistic local update
+        const optimistic: Issue = {
+          id: newRef.key || Date.now().toString(),
+          restroomId: newIssueBase.restroomId,
+          description: newIssueBase.description,
+          isResolved: false,
+          createdAt: new Date(),
+        };
+
+        setIssues((prev) => [optimistic, ...prev]);
+        setShowReportIssueForm(false);
+        alert("✅ Issue reported successfully!");
+      } catch (error) {
+        console.error("RTDB write error (issue):", error);
+        alert("❌ Failed to report issue. Please try again.");
+      }
+    })();
+  };
+
+  const handleResolveIssue = async (issueId: string) => {
+    try {
+      const issueRef = rtdbRef(rtdb, `issues/${issueId}`);
+      await rtdbUpdate(issueRef, {
+        isResolved: true,
+      });
+
+      // Optimistic update
+      setIssues((prev) =>
+        prev.map((issue) =>
+          issue.id === issueId ? { ...issue, isResolved: true } : issue
+        )
+      );
+    } catch (error) {
+      console.error("Error resolving issue:", error);
+      alert("❌ Failed to resolve issue. Please try again.");
+    }
   };
 
   const handleBathroomSubmit = async (restroomData: {
@@ -343,8 +437,8 @@ const App = () => {
                           {nearestRestroom.distance < 1000
                             ? `${Math.round(nearestRestroom.distance)}m`
                             : `${(nearestRestroom.distance / 1000).toFixed(
-                                1
-                              )}km`}
+                              1
+                            )}km`}
                         </span>
                         <span className="text-gray-400">•</span>
                         <span className="text-gray-600">
@@ -440,7 +534,7 @@ const App = () => {
       {/* Restroom Detail Side Panel (for map view) */}
       {!showListView && (
         <SidePanel
-          isOpen={selectedRestroom !== null && !showReviewForm}
+          isOpen={selectedRestroom !== null && !showReviewForm && !showReportIssueForm}
           onClose={() => setSelectedRestroom(null)}
         >
           {selectedRestroom && (
@@ -449,8 +543,11 @@ const App = () => {
               reviews={reviews.filter(
                 (r) => r.restroomId === selectedRestroom.id
               )}
+              issues={issues.filter((i) => i.restroomId === selectedRestroom.id)}
               onClose={() => setSelectedRestroom(null)}
               onAddReview={() => setShowReviewForm(true)}
+              onReportIssue={() => setShowReportIssueForm(true)}
+              onResolveIssue={handleResolveIssue}
             />
           )}
         </SidePanel>
@@ -459,7 +556,7 @@ const App = () => {
       {/* Restroom Detail Bottom Sheet (for list view) */}
       {showListView && (
         <BottomSheet
-          isOpen={selectedRestroom !== null && !showReviewForm}
+          isOpen={selectedRestroom !== null && !showReviewForm && !showReportIssueForm}
           onClose={() => setSelectedRestroom(null)}
         >
           {selectedRestroom && (
@@ -468,8 +565,11 @@ const App = () => {
               reviews={reviews.filter(
                 (r) => r.restroomId === selectedRestroom.id
               )}
+              issues={issues.filter((i) => i.restroomId === selectedRestroom.id)}
               onClose={() => setSelectedRestroom(null)}
               onAddReview={() => setShowReviewForm(true)}
+              onReportIssue={() => setShowReportIssueForm(true)}
+              onResolveIssue={handleResolveIssue}
             />
           )}
         </BottomSheet>
@@ -486,6 +586,21 @@ const App = () => {
             restroomId={selectedRestroom.id}
             onSubmit={handleReviewSubmit}
             onCancel={() => setShowReviewForm(false)}
+          />
+        )}
+      </BottomSheet>
+
+      {/* Report Issue Bottom Sheet */}
+      <BottomSheet
+        isOpen={showReportIssueForm}
+        onClose={() => setShowReportIssueForm(false)}
+        title="Report an Issue"
+      >
+        {selectedRestroom && (
+          <ReportIssueForm
+            restroomId={selectedRestroom.id}
+            onSubmit={handleIssueSubmit}
+            onCancel={() => setShowReportIssueForm(false)}
           />
         )}
       </BottomSheet>
