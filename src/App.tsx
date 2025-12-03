@@ -1,20 +1,32 @@
-import { useState, useEffect } from 'react';
-import type { FilterOptions, Location, RestroomWithDistance, Review, Restroom } from './types';
-import { getCurrentLocation } from './utils/geolocation';
-import { applyFilters, addDistanceAndSort } from './utils/filters';
-import { sampleRestrooms } from './data/sampleRestrooms';
-import FilterChips from './components/FilterChips';
-import RestroomCard from './components/RestroomCard';
-import CompactRestroomCard from './components/CompactRestroomCard';
-import BottomSheet from './components/BottomSheet';
-import SidePanel from './components/SidePanel';
-import RestroomDetail from './components/RestroomDetail';
-import AddReviewForm from './components/AddReviewForm';
-import AddBathroomForm from './components/AddBathroomForm';
-import MapView from './components/MapView';
-import { rtdb, firebaseConfig } from './firebase';
-import { get as rtdbGet, ref as rtdbRef, push as rtdbPush, set as rtdbSet, serverTimestamp as rtdbServerTimestamp } from 'firebase/database';
-import logo from './assets/image.png';
+import { useState, useEffect } from "react";
+import type {
+  FilterOptions,
+  Location,
+  RestroomWithDistance,
+  Review,
+  Restroom,
+} from "./types";
+import { getCurrentLocation } from "./utils/geolocation";
+import { applyFilters, addDistanceAndSort } from "./utils/filters";
+import { sampleRestrooms } from "./data/sampleRestrooms";
+import FilterChips from "./components/FilterChips";
+import RestroomCard from "./components/RestroomCard";
+import CompactRestroomCard from "./components/CompactRestroomCard";
+import BottomSheet from "./components/BottomSheet";
+import SidePanel from "./components/SidePanel";
+import RestroomDetail from "./components/RestroomDetail";
+import AddReviewForm from "./components/AddReviewForm";
+import AddBathroomForm from "./components/AddBathroomForm";
+import MapView from "./components/MapView";
+import { rtdb, firebaseConfig } from "./firebase";
+import {
+  get as rtdbGet,
+  ref as rtdbRef,
+  push as rtdbPush,
+  set as rtdbSet,
+  serverTimestamp as rtdbServerTimestamp,
+} from "firebase/database";
+import logo from "./assets/image.png";
 
 const App = () => {
   const [userLocation, setUserLocation] = useState<Location | null>(null);
@@ -25,8 +37,11 @@ const App = () => {
     wildcardFree: false,
     sortByDistance: true,
   });
-  const [filteredRestrooms, setFilteredRestrooms] = useState<RestroomWithDistance[]>([]);
-  const [selectedRestroom, setSelectedRestroom] = useState<RestroomWithDistance | null>(null);
+  const [filteredRestrooms, setFilteredRestrooms] = useState<
+    RestroomWithDistance[]
+  >([]);
+  const [selectedRestroom, setSelectedRestroom] =
+    useState<RestroomWithDistance | null>(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [showAddBathroomForm, setShowAddBathroomForm] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -44,23 +59,66 @@ const App = () => {
         setIsLoadingLocation(false);
       })
       .catch((error) => {
-        console.error('Location error:', error);
-        setLocationError('Unable to get your location. Please enable location services.');
+        console.error("Location error:", error);
+        setLocationError(
+          "Unable to get your location. Please enable location services."
+        );
         // Default to Northwestern campus center
         setUserLocation({
           latitude: 42.0551,
-          longitude: -87.6750,
+          longitude: -87.675,
         });
         setIsLoadingLocation(false);
       });
   }, []);
 
+  // Load reviews on mount
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        const reviewsRef = rtdbRef(rtdb, "reviews");
+        const snap = await rtdbGet(reviewsRef);
+        const rtdbData = snap && snap.exists() ? snap.val() : null;
+
+        const rtdbReviews: Review[] = [];
+        if (rtdbData) {
+          Object.keys(rtdbData).forEach((key) => {
+            const item = rtdbData[key];
+            rtdbReviews.push({
+              id: key,
+              userId: item.userId || "guest-user",
+              restroomId: item.restroomId,
+              userName: item.userName,
+              rating: item.rating,
+              comment: item.comment || "",
+              createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+              flags: item.flags || 0,
+            });
+          });
+        }
+
+        // sort newest first
+        rtdbReviews.sort((a, b) => +b.createdAt - +a.createdAt);
+        setReviews(rtdbReviews);
+      } catch (error) {
+        console.error("Error loading reviews from RTDB:", error);
+      }
+    };
+
+    loadReviews();
+  }, []);
+
   useEffect(() => {
     const loadRestrooms = async () => {
       setIsLoadingRestrooms(true);
-      console.log('Firebase projectId =', firebaseConfig.projectId, 'databaseURL =', firebaseConfig.databaseURL);
+      console.log(
+        "Firebase projectId =",
+        firebaseConfig.projectId,
+        "databaseURL =",
+        firebaseConfig.databaseURL
+      );
       try {
-        const listRef = rtdbRef(rtdb, 'restrooms');
+        const listRef = rtdbRef(rtdb, "restrooms");
         const snap = await rtdbGet(listRef);
         const rtdbData = snap && snap.exists() ? snap.val() : null;
 
@@ -79,18 +137,23 @@ const App = () => {
               requiresWildcard: item.requiresWildcard,
               photoUrls: item.photoUrls || [],
               accessibilityNotes: item.accessibilityNotes,
-              status: item.status || 'open',
-              lastUpdated: item.lastUpdated ? new Date(item.lastUpdated) : new Date(),
+              status: item.status || "open",
+              lastUpdated: item.lastUpdated
+                ? new Date(item.lastUpdated)
+                : new Date(),
             });
           });
         }
 
-        console.log('RTDB: loaded restrooms count =', rtdbRestrooms.length);
-        console.log('RTDB restrooms:', rtdbRestrooms.map(r => ({ id: r.id, name: r.name })));
+        console.log("RTDB: loaded restrooms count =", rtdbRestrooms.length);
+        console.log(
+          "RTDB restrooms:",
+          rtdbRestrooms.map((r) => ({ id: r.id, name: r.name }))
+        );
 
         setAllRestrooms([...sampleRestrooms, ...rtdbRestrooms]);
       } catch (error) {
-        console.error('Error loading restrooms from RTDB:', error);
+        console.error("Error loading restrooms from RTDB:", error);
         setAllRestrooms(sampleRestrooms);
       } finally {
         setIsLoadingRestrooms(false);
@@ -109,15 +172,43 @@ const App = () => {
     }
   }, [userLocation, filters, allRestrooms]);
 
-  const handleReviewSubmit = (review: Omit<Review, 'id' | 'createdAt' | 'flags'>) => {
-    const newReview: Review = {
-      ...review,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      flags: 0,
-    };
-    setReviews([newReview, ...reviews]);
-    setShowReviewForm(false);
+  const handleReviewSubmit = (
+    review: Omit<Review, "id" | "createdAt" | "flags">
+  ) => {
+    (async () => {
+      const newReviewBase = {
+        ...review,
+        flags: 0,
+      };
+
+      try {
+        const listRef = rtdbRef(rtdb, "reviews");
+        const newRef = rtdbPush(listRef);
+
+        await rtdbSet(newRef, {
+          ...newReviewBase,
+          createdAt: rtdbServerTimestamp(),
+        });
+
+        // optimistic local update with server key and local Date
+        const optimistic: Review = {
+          id: newRef.key || Date.now().toString(),
+          userId: newReviewBase.userId || "guest-user",
+          restroomId: newReviewBase.restroomId,
+          userName: newReviewBase.userName,
+          rating: newReviewBase.rating as Review["rating"],
+          comment: newReviewBase.comment || "",
+          createdAt: new Date(),
+          flags: 0,
+        };
+
+        setReviews((prev) => [optimistic, ...prev]);
+        setShowReviewForm(false);
+      } catch (error) {
+        console.error("RTDB write error (review):", error);
+        alert("❌ Failed to save review to database. Please try again.");
+      }
+    })();
   };
 
   const handleBathroomSubmit = async (restroomData: {
@@ -133,17 +224,17 @@ const App = () => {
     try {
       const newRestroom = {
         ...restroomData,
-        status: 'open' as const,
+        status: "open" as const,
         lastUpdated: new Date(),
         photoUrls: [],
       };
       try {
-        const listRef = rtdbRef(rtdb, 'restrooms');
+        const listRef = rtdbRef(rtdb, "restrooms");
         const newRef = rtdbPush(listRef);
 
-        console.log('RTDB: writing restroom object:', {
+        console.log("RTDB: writing restroom object:", {
           ...newRestroom,
-          createdAt: 'serverTimestamp',
+          createdAt: "serverTimestamp",
         });
 
         await rtdbSet(newRef, {
@@ -151,17 +242,17 @@ const App = () => {
           createdAt: rtdbServerTimestamp(),
         });
 
-        console.log('RTDB: Restroom added with key', newRef.key);
+        console.log("RTDB: Restroom added with key", newRef.key);
 
-        alert('✅ Restroom added successfully! Thank you for contributing!');
+        alert("✅ Restroom added successfully! Thank you for contributing!");
       } catch (rtdbError) {
-        console.error('RTDB write error:', rtdbError);
-        alert('❌ Failed to save restroom to database. Please try again.');
+        console.error("RTDB write error:", rtdbError);
+        alert("❌ Failed to save restroom to database. Please try again.");
         throw rtdbError;
       }
     } catch (error) {
-      console.error('Error adding restroom:', error);
-      alert('❌ Failed to add restroom. Please try again.');
+      console.error("Error adding restroom:", error);
+      alert("❌ Failed to add restroom. Please try again.");
     }
   };
 
@@ -174,7 +265,11 @@ const App = () => {
       <header className="bg-purple-600 text-white shadow-lg flex-shrink-0">
         <div className="px-4 py-2 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="FlushRush Logo" className="h-20 w-20 object-contain" />
+            <img
+              src={logo}
+              alt="FlushRush Logo"
+              className="h-20 w-20 object-contain"
+            />
             <div>
               <h1 className="text-xl font-bold">FlushRush</h1>
               <p className="text-xs text-purple-100">Northwestern Campus</p>
@@ -184,7 +279,7 @@ const App = () => {
             onClick={() => setShowListView(!showListView)}
             className="bg-purple-700 hover:bg-purple-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            {showListView ? '🗺️ Map' : '📋 List'}
+            {showListView ? "🗺️ Map" : "📋 List"}
           </button>
         </div>
       </header>
@@ -201,7 +296,9 @@ const App = () => {
           <div className="flex-shrink-0">
             {isLoadingLocation && (
               <div className="bg-blue-50 border-b-2 border-blue-300 px-4 py-2 text-center">
-                <p className="text-blue-800 text-sm">📍 Getting your location...</p>
+                <p className="text-blue-800 text-sm">
+                  📍 Getting your location...
+                </p>
               </div>
             )}
             {locationError && (
@@ -214,7 +311,10 @@ const App = () => {
 
         {/* Map or List View - Takes remaining space */}
         {!showListView && userLocation ? (
-          <div className="flex-1 flex overflow-hidden" style={{ minHeight: '500px' }}>
+          <div
+            className="flex-1 flex overflow-hidden"
+            style={{ minHeight: "500px" }}
+          >
             {/* Map Section - 65% of width */}
             <div className="w-[65%] relative h-full">
               <MapView
@@ -223,23 +323,33 @@ const App = () => {
                 onRestroomClick={setSelectedRestroom}
                 selectedRestroom={selectedRestroom}
               />
-              
+
               {/* Floating Nearest Restroom Card - More compact */}
               {nearestRestroom && !isLoadingLocation && showNearestBanner && (
                 <div className="absolute top-3 left-3 right-3 bg-white rounded-lg shadow-xl p-3 z-[1000] border-2 border-purple-400">
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-purple-600 font-bold mb-0.5">🎯 NEAREST</div>
-                      <h3 className="font-bold text-sm truncate">{nearestRestroom.buildingName}</h3>
-                      <p className="text-xs text-gray-600 truncate">{nearestRestroom.floor}</p>
+                      <div className="text-xs text-purple-600 font-bold mb-0.5">
+                        🎯 NEAREST
+                      </div>
+                      <h3 className="font-bold text-sm truncate">
+                        {nearestRestroom.buildingName}
+                      </h3>
+                      <p className="text-xs text-gray-600 truncate">
+                        {nearestRestroom.floor}
+                      </p>
                       <div className="flex items-center gap-2 mt-1 text-xs">
                         <span className="text-purple-600 font-semibold">
                           {nearestRestroom.distance < 1000
                             ? `${Math.round(nearestRestroom.distance)}m`
-                            : `${(nearestRestroom.distance / 1000).toFixed(1)}km`}
+                            : `${(nearestRestroom.distance / 1000).toFixed(
+                                1
+                              )}km`}
                         </span>
                         <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">{nearestRestroom.estimatedWalkTime} min</span>
+                        <span className="text-gray-600">
+                          {nearestRestroom.estimatedWalkTime} min
+                        </span>
                       </div>
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
@@ -261,7 +371,7 @@ const App = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Bathroom List Section - 35% of width */}
             <div className="w-[35%] bg-gradient-to-b from-gray-50 to-white border-l-2 border-gray-200 overflow-hidden flex flex-col">
               <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
@@ -272,8 +382,12 @@ const App = () => {
               <div className="flex-1 overflow-y-auto px-3 py-3">
                 {filteredRestrooms.length === 0 ? (
                   <div className="bg-gray-50 rounded-lg p-6 text-center">
-                    <p className="text-gray-600 text-sm mb-1">No restrooms match your filters</p>
-                    <p className="text-gray-500 text-xs">Try adjusting your settings</p>
+                    <p className="text-gray-600 text-sm mb-1">
+                      No restrooms match your filters
+                    </p>
+                    <p className="text-gray-500 text-xs">
+                      Try adjusting your settings
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -294,12 +408,18 @@ const App = () => {
             {/* Full List View */}
             <div className="max-w-4xl mx-auto">
               <h2 className="text-lg font-bold text-gray-900 mb-4">
-                {filteredRestrooms.length === 0 ? 'No restrooms found' : `${filteredRestrooms.length} Restrooms`}
+                {filteredRestrooms.length === 0
+                  ? "No restrooms found"
+                  : `${filteredRestrooms.length} Restrooms`}
               </h2>
               {filteredRestrooms.length === 0 ? (
                 <div className="bg-gray-50 rounded-xl p-8 text-center">
-                  <p className="text-gray-600 mb-2">No restrooms match your filters</p>
-                  <p className="text-gray-500 text-sm">Try adjusting your filter settings</p>
+                  <p className="text-gray-600 mb-2">
+                    No restrooms match your filters
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    Try adjusting your filter settings
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -326,7 +446,9 @@ const App = () => {
           {selectedRestroom && (
             <RestroomDetail
               restroom={selectedRestroom}
-              reviews={reviews.filter((r) => r.restroomId === selectedRestroom.id)}
+              reviews={reviews.filter(
+                (r) => r.restroomId === selectedRestroom.id
+              )}
               onClose={() => setSelectedRestroom(null)}
               onAddReview={() => setShowReviewForm(true)}
             />
@@ -343,7 +465,9 @@ const App = () => {
           {selectedRestroom && (
             <RestroomDetail
               restroom={selectedRestroom}
-              reviews={reviews.filter((r) => r.restroomId === selectedRestroom.id)}
+              reviews={reviews.filter(
+                (r) => r.restroomId === selectedRestroom.id
+              )}
               onClose={() => setSelectedRestroom(null)}
               onAddReview={() => setShowReviewForm(true)}
             />
@@ -392,7 +516,9 @@ const App = () => {
       {/* Loading indicator for restrooms */}
       {isLoadingRestrooms && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow-lg z-[9000] border-2 border-purple-400">
-          <p className="text-sm text-purple-600 font-medium">Loading restrooms...</p>
+          <p className="text-sm text-purple-600 font-medium">
+            Loading restrooms...
+          </p>
         </div>
       )}
     </div>
