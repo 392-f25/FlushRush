@@ -151,7 +151,7 @@ const App = () => {
           rtdbRestrooms.map((r) => ({ id: r.id, name: r.name }))
         );
 
-        setAllRestrooms([...sampleRestrooms, ...rtdbRestrooms]);
+        setAllRestrooms(rtdbRestrooms);
       } catch (error) {
         console.error("Error loading restrooms from RTDB:", error);
         setAllRestrooms(sampleRestrooms);
