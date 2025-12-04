@@ -10,9 +10,10 @@ interface RestroomDetailProps {
   onAddReview: () => void;
   onReportIssue: () => void;
   onResolveIssue: (issueId: string) => void;
+  onEdit?: () => void;
 }
 
-const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onReportIssue, onResolveIssue }: RestroomDetailProps) => {
+const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onReportIssue, onResolveIssue, onEdit }: RestroomDetailProps) => {
   const openInMaps = () => {
     const { latitude, longitude } = restroom.location;
     const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
@@ -38,7 +39,17 @@ const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onRep
       {/* Header */}
       <div className="mb-6">
         <div className="flex justify-between items-start mb-2">
-          <h1 className="text-2xl font-bold text-gray-900">{restroom.buildingName}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">{restroom.buildingName}</h1>
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="text-purple-600 hover:text-purple-700 font-medium text-sm px-3 py-1 rounded-lg border border-purple-100"
+              >
+                Edit
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-3xl leading-none"

@@ -1,8 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Location } from '../types';
 
 interface AddBathroomFormProps {
   userLocation: Location | null;
+  initialValues?: Partial<{
+    name: string;
+    buildingName: string;
+    floor: string;
+    location: Location;
+    isWheelchairAccessible: boolean;
+    isGenderNeutral: boolean;
+    requiresWildcard: boolean;
+    accessibilityNotes?: string;
+  }>;
   onSubmit: (restroom: {
     name: string;
     buildingName: string;
@@ -16,7 +26,7 @@ interface AddBathroomFormProps {
   onCancel: () => void;
 }
 
-const AddBathroomForm = ({ userLocation, onSubmit, onCancel }: AddBathroomFormProps) => {
+const AddBathroomForm = ({ userLocation, initialValues, onSubmit, onCancel }: AddBathroomFormProps) => {
   const [buildingName, setBuildingName] = useState('');
   const [floor, setFloor] = useState('');
   const [name, setName] = useState('');
@@ -27,6 +37,23 @@ const AddBathroomForm = ({ userLocation, onSubmit, onCancel }: AddBathroomFormPr
   const [useCurrentLocation, setUseCurrentLocation] = useState(true);
   const [customLat, setCustomLat] = useState('');
   const [customLng, setCustomLng] = useState('');
+
+  useEffect(() => {
+    if (initialValues) {
+      if (initialValues.buildingName) setBuildingName(initialValues.buildingName);
+      if (initialValues.floor) setFloor(initialValues.floor);
+      if (initialValues.name) setName(initialValues.name);
+      if (typeof initialValues.isWheelchairAccessible === 'boolean') setIsWheelchairAccessible(initialValues.isWheelchairAccessible);
+      if (typeof initialValues.isGenderNeutral === 'boolean') setIsGenderNeutral(initialValues.isGenderNeutral);
+      if (typeof initialValues.requiresWildcard === 'boolean') setRequiresWildcard(initialValues.requiresWildcard);
+      if (initialValues.accessibilityNotes) setAccessibilityNotes(initialValues.accessibilityNotes);
+      if (initialValues.location) {
+        setUseCurrentLocation(false);
+        setCustomLat(String(initialValues.location.latitude));
+        setCustomLng(String(initialValues.location.longitude));
+      }
+    }
+  }, [initialValues]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -54,6 +54,8 @@ const App = () => {
   const [showListView, setShowListView] = useState(false);
   const [allRestrooms, setAllRestrooms] = useState<Restroom[]>(sampleRestrooms);
   const [isLoadingRestrooms, setIsLoadingRestrooms] = useState(false);
+  const [showEditBathroomForm, setShowEditBathroomForm] = useState(false);
+  const [editingRestroom, setEditingRestroom] = useState<Restroom | null>(null);
 
   // Get user location on mount
   useEffect(() => {
@@ -338,6 +340,25 @@ const App = () => {
 
         console.log("RTDB: Restroom added with key", newRef.key);
 
+        // optimistic local update: add the new restroom to local state
+        const optimisticRestroom: Restroom = {
+          id: newRef.key || Date.now().toString(),
+          name: newRestroom.name,
+          buildingName: newRestroom.buildingName,
+          floor: newRestroom.floor,
+          location: newRestroom.location,
+          isWheelchairAccessible: newRestroom.isWheelchairAccessible,
+          isGenderNeutral: newRestroom.isGenderNeutral,
+          requiresWildcard: newRestroom.requiresWildcard,
+          photoUrls: newRestroom.photoUrls || [],
+          accessibilityNotes: newRestroom.accessibilityNotes,
+          status: newRestroom.status,
+          lastUpdated: new Date(),
+        };
+
+        setAllRestrooms((prev) => [optimisticRestroom, ...prev]);
+        setShowAddBathroomForm(false);
+
         alert("✅ Restroom added successfully! Thank you for contributing!");
       } catch (rtdbError) {
         console.error("RTDB write error:", rtdbError);
@@ -347,6 +368,83 @@ const App = () => {
     } catch (error) {
       console.error("Error adding restroom:", error);
       alert("❌ Failed to add restroom. Please try again.");
+    }
+  };
+
+  const openEditRestroom = (restroom: Restroom | RestroomWithDistance | null) => {
+    if (!restroom) return;
+    // RestroomWithDistance extends Restroom so this cast is safe
+    setEditingRestroom(restroom as Restroom);
+    setShowEditBathroomForm(true);
+  };
+
+  const handleEditBathroomSubmit = async (restroomData: {
+    name: string;
+    buildingName: string;
+    floor: string;
+    location: Location;
+    isWheelchairAccessible: boolean;
+    isGenderNeutral: boolean;
+    requiresWildcard: boolean;
+    accessibilityNotes?: string;
+  }) => {
+    if (!editingRestroom) {
+      alert('No restroom selected for editing.');
+      return;
+    }
+
+    const id = editingRestroom.id;
+    try {
+      const restroomRef = rtdbRef(rtdb, `restrooms/${id}`);
+      await rtdbUpdate(restroomRef, {
+        ...restroomData,
+        lastUpdated: rtdbServerTimestamp(),
+      });
+
+      // optimistic local update
+      setAllRestrooms((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                name: restroomData.name,
+                buildingName: restroomData.buildingName,
+                floor: restroomData.floor,
+                location: restroomData.location,
+                isWheelchairAccessible: restroomData.isWheelchairAccessible,
+                isGenderNeutral: restroomData.isGenderNeutral,
+                requiresWildcard: restroomData.requiresWildcard,
+                accessibilityNotes: restroomData.accessibilityNotes,
+                lastUpdated: new Date(),
+              }
+            : r
+        )
+      );
+
+      // update selectedRestroom view if open
+      setSelectedRestroom((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: restroomData.name,
+              buildingName: restroomData.buildingName,
+              floor: restroomData.floor,
+              location: restroomData.location,
+              isWheelchairAccessible: restroomData.isWheelchairAccessible,
+              isGenderNeutral: restroomData.isGenderNeutral,
+              requiresWildcard: restroomData.requiresWildcard,
+              accessibilityNotes: restroomData.accessibilityNotes,
+              lastUpdated: new Date(),
+            }
+          : prev
+      );
+
+      setShowEditBathroomForm(false);
+      setEditingRestroom(null);
+      alert('✅ Restroom updated successfully!');
+    } catch (error) {
+      console.error('RTDB update error:', error);
+      alert('❌ Failed to update restroom. Please try again.');
     }
   };
 
@@ -548,6 +646,7 @@ const App = () => {
               onAddReview={() => setShowReviewForm(true)}
               onReportIssue={() => setShowReportIssueForm(true)}
               onResolveIssue={handleResolveIssue}
+              onEdit={() => openEditRestroom(selectedRestroom)}
             />
           )}
         </SidePanel>
@@ -570,6 +669,7 @@ const App = () => {
               onAddReview={() => setShowReviewForm(true)}
               onReportIssue={() => setShowReportIssueForm(true)}
               onResolveIssue={handleResolveIssue}
+              onEdit={() => openEditRestroom(selectedRestroom)}
             />
           )}
         </BottomSheet>
@@ -616,6 +716,31 @@ const App = () => {
           onSubmit={handleBathroomSubmit}
           onCancel={() => setShowAddBathroomForm(false)}
         />
+      </BottomSheet>
+
+      {/* Edit Bathroom Bottom Sheet */}
+      <BottomSheet
+        isOpen={showEditBathroomForm}
+        onClose={() => setShowEditBathroomForm(false)}
+        title="Edit Restroom"
+      >
+        {editingRestroom && (
+          <AddBathroomForm
+            userLocation={userLocation}
+            initialValues={{
+              name: editingRestroom.name,
+              buildingName: editingRestroom.buildingName,
+              floor: editingRestroom.floor,
+              location: editingRestroom.location,
+              isWheelchairAccessible: editingRestroom.isWheelchairAccessible,
+              isGenderNeutral: editingRestroom.isGenderNeutral,
+              requiresWildcard: editingRestroom.requiresWildcard,
+              accessibilityNotes: editingRestroom.accessibilityNotes,
+            }}
+            onSubmit={handleEditBathroomSubmit}
+            onCancel={() => setShowEditBathroomForm(false)}
+          />
+        )}
       </BottomSheet>
 
       {/* Floating Add Button */}
