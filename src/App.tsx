@@ -9,7 +9,6 @@ import type {
 } from "./types";
 import { getCurrentLocation } from "./utils/geolocation";
 import { applyFilters, addDistanceAndSort } from "./utils/filters";
-import { sampleRestrooms } from "./data/sampleRestrooms";
 import FilterChips from "./components/FilterChips";
 import RestroomCard from "./components/RestroomCard";
 import CompactRestroomCard from "./components/CompactRestroomCard";
@@ -52,7 +51,7 @@ const App = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [showListView, setShowListView] = useState(false);
-  const [allRestrooms, setAllRestrooms] = useState<Restroom[]>(sampleRestrooms);
+  const [allRestrooms, setAllRestrooms] = useState<Restroom[]>([]);
   const [isLoadingRestrooms, setIsLoadingRestrooms] = useState(false);
   const [showEditBathroomForm, setShowEditBathroomForm] = useState(false);
   const [editingRestroom, setEditingRestroom] = useState<Restroom | null>(null);
@@ -194,7 +193,7 @@ const App = () => {
         setAllRestrooms(rtdbRestrooms);
       } catch (error) {
         console.error("Error loading restrooms from RTDB:", error);
-        setAllRestrooms(sampleRestrooms);
+        setAllRestrooms([]);
       } finally {
         setIsLoadingRestrooms(false);
       }
