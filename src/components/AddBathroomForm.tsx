@@ -318,9 +318,9 @@ const AddBathroomForm = ({
             placeholder="e.g., South side of 2nd floor near elevators"
             className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          {/* <p className="text-xs text-gray-500 mt-1">
             Optional : helps users find the restroom inside the building.
-          </p>
+          </p> */}
         </div>
       </div>
 
@@ -341,9 +341,9 @@ const AddBathroomForm = ({
             placeholder="e.g., 9:00-17:00 or 09:00 to 17:00"
             className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          {/* <p className="text-xs text-gray-500 mt-1">
             Optional : helps show when building is open.
-          </p>
+          </p> */}
         </div>
 
         <div>
@@ -361,9 +361,9 @@ const AddBathroomForm = ({
             placeholder="e.g., 18:00-08:00"
             className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          {/* <p className="text-xs text-gray-500 mt-1">
             Optional hours when access requires wildcard/card.
-          </p>
+          </p> */}
         </div>
       </div>
 
