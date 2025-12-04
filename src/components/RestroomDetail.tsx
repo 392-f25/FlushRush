@@ -159,6 +159,19 @@ const RestroomDetail = ({
           </p>
         </div>
       )}
+      {(restroom.indoorDirections) && (
+        <div className="mb-6">
+          <h2 className="font-semibold text-gray-900 mb-2">Indoor Directions</h2>
+          <div className="space-y-1 text-sm text-gray-700">
+            {restroom.indoorDirections && (
+              <p>
+                <strong>How to get there?</strong>
+                {restroom.indoorDirections}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Operating Hours */}
       {(restroom.hours || restroom.wildcardHours) && (

@@ -188,6 +188,7 @@ const App = () => {
               accessibilityNotes: item.accessibilityNotes,
               hours: item.hours,
               wildcardHours: item.wildcardHours,
+              indoorDirections: item.indoorDirections,
               status: item.status || "open",
               lastUpdated: item.lastUpdated
                 ? new Date(item.lastUpdated)
@@ -335,6 +336,7 @@ const App = () => {
     accessibilityNotes?: string;
     hours?: string;
     wildcardHours?: string;
+    indoorDirections?: string;
   }) => {
     try {
       const newRestroom = {
@@ -344,6 +346,7 @@ const App = () => {
         photoUrls: [],
         hours: restroomData.hours,
         wildcardHours: restroomData.wildcardHours,
+        indoorDirections: restroomData.indoorDirections,
       };
       try {
         const listRef = rtdbRef(rtdb, "restrooms");
@@ -378,6 +381,7 @@ const App = () => {
           accessibilityNotes: newRestroom.accessibilityNotes,
           hours: newRestroom.hours,
           wildcardHours: newRestroom.wildcardHours,
+          indoorDirections: newRestroom.indoorDirections,
           status: newRestroom.status,
           lastUpdated: new Date(),
         };
@@ -417,6 +421,7 @@ const App = () => {
     accessibilityNotes?: string;
     hours?: string;
     wildcardHours?: string;
+    indoorDirections?: string;
   }) => {
     if (!editingRestroom) {
       alert("No restroom selected for editing.");
@@ -448,6 +453,7 @@ const App = () => {
                 accessibilityNotes: restroomData.accessibilityNotes,
                 hours: restroomData.hours,
                 wildcardHours: restroomData.wildcardHours,
+                indoorDirections: restroomData.indoorDirections,
                 lastUpdated: new Date(),
               }
             : r
@@ -469,6 +475,7 @@ const App = () => {
               accessibilityNotes: restroomData.accessibilityNotes,
               hours: restroomData.hours,
               wildcardHours: restroomData.wildcardHours,
+              indoorDirections: restroomData.indoorDirections,
               lastUpdated: new Date(),
             }
           : prev

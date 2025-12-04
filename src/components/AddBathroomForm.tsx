@@ -14,6 +14,7 @@ interface AddBathroomFormProps {
     accessibilityNotes?: string;
     hours?: string;
     wildcardHours?: string;
+    indoorDirections?: string;
   }>;
   onSubmit: (restroom: {
     name: string;
@@ -26,6 +27,7 @@ interface AddBathroomFormProps {
     accessibilityNotes?: string;
     hours?: string;
     wildcardHours?: string;
+    indoorDirections?: string;
   }) => void;
   onCancel: () => void;
 }
@@ -45,6 +47,7 @@ const AddBathroomForm = ({
   const [accessibilityNotes, setAccessibilityNotes] = useState("");
   const [hours, setHours] = useState("");
   const [wildcardHours, setWildcardHours] = useState("");
+  const [indoorDirections, setIndoorDirections] = useState("");
   const [useCurrentLocation, setUseCurrentLocation] = useState(true);
   const [customLat, setCustomLat] = useState("");
   const [customLng, setCustomLng] = useState("");
@@ -66,6 +69,8 @@ const AddBathroomForm = ({
       if (initialValues.hours) setHours(initialValues.hours);
       if (initialValues.wildcardHours)
         setWildcardHours(initialValues.wildcardHours);
+      if(initialValues.indoorDirections)
+        setIndoorDirections(initialValues.indoorDirections);
       if (initialValues.location) {
         setUseCurrentLocation(false);
         setCustomLat(String(initialValues.location.latitude));
@@ -98,6 +103,7 @@ const AddBathroomForm = ({
       accessibilityNotes: accessibilityNotes.trim() || "",
       hours: hours.trim() || undefined,
       wildcardHours: wildcardHours.trim() || undefined,
+      indoorDirections: indoorDirections.trim() || undefined,
     });
   };
 
@@ -295,6 +301,29 @@ const AddBathroomForm = ({
         </p>
       </div>
 
+
+      <div className="grid grid-cols-1 gap-2">
+        <div>
+          <label
+            htmlFor="indoorDirections"
+            className="block text-xs font-medium text-gray-900 mb-1"
+          >
+            Indoor Directions (How to get there inside the building)
+          </label>
+          <input
+            id="indoorDirections"
+            type="text"
+            value={indoorDirections}
+            onChange={(e) => setIndoorDirections(e.target.value)}
+            placeholder="e.g., South side of 2nd floor near elevators"
+            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Optional : helps users find the restroom inside the building.
+          </p>
+        </div>
+      </div>
+
       {/* Operating Hours */}
       <div className="grid grid-cols-1 gap-2">
         <div>
@@ -333,7 +362,7 @@ const AddBathroomForm = ({
             className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Optional — hours when access requires wildcard/card.
+            Optional hours when access requires wildcard/card.
           </p>
         </div>
       </div>

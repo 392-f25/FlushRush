@@ -20,6 +20,7 @@ export interface Restroom {
   hours?: string;
   // Optional (wildcard required hours)
   wildcardHours?: string;
+  indoorDirections?: string;
   status: 'open' | 'closed' | 'cleaning' | 'blocked';
   lastUpdated: Date;
 }
