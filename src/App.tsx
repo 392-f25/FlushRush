@@ -56,6 +56,16 @@ const App = () => {
   const [showEditBathroomForm, setShowEditBathroomForm] = useState(false);
   const [editingRestroom, setEditingRestroom] = useState<Restroom | null>(null);
 
+  // Helper to remove undefined properties before sending to RTDB
+  const sanitizeForRtdb = (obj: Record<string, any>) => {
+    const out: Record<string, any> = {};
+    Object.keys(obj).forEach((k) => {
+      const v = obj[k];
+      if (v !== undefined) out[k] = v;
+    });
+    return out;
+  };
+
   // Get user location on mount
   useEffect(() => {
     getCurrentLocation()
@@ -176,6 +186,8 @@ const App = () => {
               requiresWildcard: item.requiresWildcard,
               photoUrls: item.photoUrls || [],
               accessibilityNotes: item.accessibilityNotes,
+              hours: item.hours,
+              wildcardHours: item.wildcardHours,
               status: item.status || "open",
               lastUpdated: item.lastUpdated
                 ? new Date(item.lastUpdated)
@@ -224,10 +236,13 @@ const App = () => {
         const listRef = rtdbRef(rtdb, "reviews");
         const newRef = rtdbPush(listRef);
 
-        await rtdbSet(newRef, {
-          ...newReviewBase,
-          createdAt: rtdbServerTimestamp(),
-        });
+        await rtdbSet(
+          newRef,
+          sanitizeForRtdb({
+            ...newReviewBase,
+            createdAt: rtdbServerTimestamp(),
+          })
+        );
 
         // optimistic local update with server key and local Date
         const optimistic: Review = {
@@ -263,10 +278,13 @@ const App = () => {
         const listRef = rtdbRef(rtdb, "issues");
         const newRef = rtdbPush(listRef);
 
-        await rtdbSet(newRef, {
-          ...newIssueBase,
-          createdAt: rtdbServerTimestamp(),
-        });
+        await rtdbSet(
+          newRef,
+          sanitizeForRtdb({
+            ...newIssueBase,
+            createdAt: rtdbServerTimestamp(),
+          })
+        );
 
         // optimistic local update
         const optimistic: Issue = {
@@ -315,6 +333,8 @@ const App = () => {
     isGenderNeutral: boolean;
     requiresWildcard: boolean;
     accessibilityNotes?: string;
+    hours?: string;
+    wildcardHours?: string;
   }) => {
     try {
       const newRestroom = {
@@ -322,6 +342,8 @@ const App = () => {
         status: "open" as const,
         lastUpdated: new Date(),
         photoUrls: [],
+        hours: restroomData.hours,
+        wildcardHours: restroomData.wildcardHours,
       };
       try {
         const listRef = rtdbRef(rtdb, "restrooms");
@@ -332,10 +354,13 @@ const App = () => {
           createdAt: "serverTimestamp",
         });
 
-        await rtdbSet(newRef, {
-          ...newRestroom,
-          createdAt: rtdbServerTimestamp(),
-        });
+        await rtdbSet(
+          newRef,
+          sanitizeForRtdb({
+            ...newRestroom,
+            createdAt: rtdbServerTimestamp(),
+          })
+        );
 
         console.log("RTDB: Restroom added with key", newRef.key);
 
@@ -351,6 +376,8 @@ const App = () => {
           requiresWildcard: newRestroom.requiresWildcard,
           photoUrls: newRestroom.photoUrls || [],
           accessibilityNotes: newRestroom.accessibilityNotes,
+          hours: newRestroom.hours,
+          wildcardHours: newRestroom.wildcardHours,
           status: newRestroom.status,
           lastUpdated: new Date(),
         };
@@ -370,7 +397,9 @@ const App = () => {
     }
   };
 
-  const openEditRestroom = (restroom: Restroom | RestroomWithDistance | null) => {
+  const openEditRestroom = (
+    restroom: Restroom | RestroomWithDistance | null
+  ) => {
     if (!restroom) return;
     // RestroomWithDistance extends Restroom so this cast is safe
     setEditingRestroom(restroom as Restroom);
@@ -386,19 +415,22 @@ const App = () => {
     isGenderNeutral: boolean;
     requiresWildcard: boolean;
     accessibilityNotes?: string;
+    hours?: string;
+    wildcardHours?: string;
   }) => {
     if (!editingRestroom) {
-      alert('No restroom selected for editing.');
+      alert("No restroom selected for editing.");
       return;
     }
 
     const id = editingRestroom.id;
     try {
       const restroomRef = rtdbRef(rtdb, `restrooms/${id}`);
-      await rtdbUpdate(restroomRef, {
+      const updatePayload = sanitizeForRtdb({
         ...restroomData,
         lastUpdated: rtdbServerTimestamp(),
       });
+      await rtdbUpdate(restroomRef, updatePayload);
 
       // optimistic local update
       setAllRestrooms((prev) =>
@@ -414,6 +446,8 @@ const App = () => {
                 isGenderNeutral: restroomData.isGenderNeutral,
                 requiresWildcard: restroomData.requiresWildcard,
                 accessibilityNotes: restroomData.accessibilityNotes,
+                hours: restroomData.hours,
+                wildcardHours: restroomData.wildcardHours,
                 lastUpdated: new Date(),
               }
             : r
@@ -433,6 +467,8 @@ const App = () => {
               isGenderNeutral: restroomData.isGenderNeutral,
               requiresWildcard: restroomData.requiresWildcard,
               accessibilityNotes: restroomData.accessibilityNotes,
+              hours: restroomData.hours,
+              wildcardHours: restroomData.wildcardHours,
               lastUpdated: new Date(),
             }
           : prev
@@ -440,10 +476,10 @@ const App = () => {
 
       setShowEditBathroomForm(false);
       setEditingRestroom(null);
-      alert('✅ Restroom updated successfully!');
+      alert("✅ Restroom updated successfully!");
     } catch (error) {
-      console.error('RTDB update error:', error);
-      alert('❌ Failed to update restroom. Please try again.');
+      console.error("RTDB update error:", error);
+      alert("❌ Failed to update restroom. Please try again.");
     }
   };
 
@@ -534,8 +570,8 @@ const App = () => {
                           {nearestRestroom.distance < 1000
                             ? `${Math.round(nearestRestroom.distance)}m`
                             : `${(nearestRestroom.distance / 1000).toFixed(
-                              1
-                            )}km`}
+                                1
+                              )}km`}
                         </span>
                         <span className="text-gray-400">•</span>
                         <span className="text-gray-600">
@@ -631,7 +667,9 @@ const App = () => {
       {/* Restroom Detail Side Panel (for map view) */}
       {!showListView && (
         <SidePanel
-          isOpen={selectedRestroom !== null && !showReviewForm && !showReportIssueForm}
+          isOpen={
+            selectedRestroom !== null && !showReviewForm && !showReportIssueForm
+          }
           onClose={() => setSelectedRestroom(null)}
         >
           {selectedRestroom && (
@@ -640,7 +678,9 @@ const App = () => {
               reviews={reviews.filter(
                 (r) => r.restroomId === selectedRestroom.id
               )}
-              issues={issues.filter((i) => i.restroomId === selectedRestroom.id)}
+              issues={issues.filter(
+                (i) => i.restroomId === selectedRestroom.id
+              )}
               onClose={() => setSelectedRestroom(null)}
               onAddReview={() => setShowReviewForm(true)}
               onReportIssue={() => setShowReportIssueForm(true)}
@@ -654,7 +694,9 @@ const App = () => {
       {/* Restroom Detail Bottom Sheet (for list view) */}
       {showListView && (
         <BottomSheet
-          isOpen={selectedRestroom !== null && !showReviewForm && !showReportIssueForm}
+          isOpen={
+            selectedRestroom !== null && !showReviewForm && !showReportIssueForm
+          }
           onClose={() => setSelectedRestroom(null)}
         >
           {selectedRestroom && (
@@ -663,7 +705,9 @@ const App = () => {
               reviews={reviews.filter(
                 (r) => r.restroomId === selectedRestroom.id
               )}
-              issues={issues.filter((i) => i.restroomId === selectedRestroom.id)}
+              issues={issues.filter(
+                (i) => i.restroomId === selectedRestroom.id
+              )}
               onClose={() => setSelectedRestroom(null)}
               onAddReview={() => setShowReviewForm(true)}
               onReportIssue={() => setShowReportIssueForm(true)}

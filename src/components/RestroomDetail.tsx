@@ -1,6 +1,6 @@
-import type { RestroomWithDistance, Review, Issue } from '../types';
-import { formatDistance } from '../utils/geolocation';
-import ReviewCard from '../components/ReviewCard';
+import type { RestroomWithDistance, Review, Issue } from "../types";
+import { formatDistance } from "../utils/geolocation";
+import ReviewCard from "../components/ReviewCard";
 
 interface RestroomDetailProps {
   restroom: RestroomWithDistance;
@@ -13,25 +13,34 @@ interface RestroomDetailProps {
   onEdit?: () => void;
 }
 
-const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onReportIssue, onResolveIssue, onEdit }: RestroomDetailProps) => {
+const RestroomDetail = ({
+  restroom,
+  reviews,
+  issues,
+  onClose,
+  onAddReview,
+  onReportIssue,
+  onResolveIssue,
+  onEdit,
+}: RestroomDetailProps) => {
   const openInMaps = () => {
     const { latitude, longitude } = restroom.location;
     const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   };
 
   const statusColors = {
-    open: 'bg-green-100 text-green-800 border-green-300',
-    closed: 'bg-red-100 text-red-800 border-red-300',
-    cleaning: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    blocked: 'bg-orange-100 text-orange-800 border-orange-300',
+    open: "bg-green-100 text-green-800 border-green-300",
+    closed: "bg-red-100 text-red-800 border-red-300",
+    cleaning: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    blocked: "bg-orange-100 text-orange-800 border-orange-300",
   };
 
   const statusLabels = {
-    open: 'Open',
-    closed: 'Closed',
-    cleaning: 'Closed for Cleaning',
-    blocked: 'Temporarily Blocked',
+    open: "Open",
+    closed: "Closed",
+    cleaning: "Closed for Cleaning",
+    blocked: "Temporarily Blocked",
   };
 
   return (
@@ -40,7 +49,9 @@ const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onRep
       <div className="mb-6">
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{restroom.buildingName}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {restroom.buildingName}
+            </h1>
             {onEdit && (
               <button
                 onClick={onEdit}
@@ -58,11 +69,17 @@ const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onRep
             ×
           </button>
         </div>
-        <p className="text-gray-600">{restroom.floor} • {restroom.name}</p>
+        <p className="text-gray-600">
+          {restroom.floor} • {restroom.name}
+        </p>
       </div>
 
       {/* Status */}
-      <div className={`inline-flex items-center px-4 py-2 rounded-lg border-2 mb-4 ${statusColors[restroom.status]}`}>
+      <div
+        className={`inline-flex items-center px-4 py-2 rounded-lg border-2 mb-4 ${
+          statusColors[restroom.status]
+        }`}
+      >
         <span className="font-semibold">{statusLabels[restroom.status]}</span>
       </div>
 
@@ -86,24 +103,48 @@ const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onRep
 
       {/* Accessibility Features */}
       <div className="mb-6">
-        <h2 className="font-semibold text-gray-900 mb-3">Accessibility Features</h2>
+        <h2 className="font-semibold text-gray-900 mb-3">
+          Accessibility Features
+        </h2>
         <div className="grid grid-cols-2 gap-3">
-          <div className={`p-4 rounded-lg border-2 ${restroom.isWheelchairAccessible ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-300'}`}>
+          <div
+            className={`p-4 rounded-lg border-2 ${
+              restroom.isWheelchairAccessible
+                ? "bg-blue-50 border-blue-300"
+                : "bg-gray-50 border-gray-300"
+            }`}
+          >
             <div className="text-2xl mb-1">♿</div>
             <div className="text-sm font-medium">
-              {restroom.isWheelchairAccessible ? 'Wheelchair Accessible' : 'Not Wheelchair Accessible'}
+              {restroom.isWheelchairAccessible
+                ? "Wheelchair Accessible"
+                : "Not Wheelchair Accessible"}
             </div>
           </div>
-          <div className={`p-4 rounded-lg border-2 ${restroom.isGenderNeutral ? 'bg-purple-50 border-purple-300' : 'bg-gray-50 border-gray-300'}`}>
+          <div
+            className={`p-4 rounded-lg border-2 ${
+              restroom.isGenderNeutral
+                ? "bg-purple-50 border-purple-300"
+                : "bg-gray-50 border-gray-300"
+            }`}
+          >
             <div className="text-2xl mb-1">🚻</div>
             <div className="text-sm font-medium">
-              {restroom.isGenderNeutral ? 'Gender Neutral' : 'Gendered'}
+              {restroom.isGenderNeutral ? "Gender Neutral" : "Gendered"}
             </div>
           </div>
-          <div className={`p-4 rounded-lg border-2 ${!restroom.requiresWildcard ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-300'}`}>
+          <div
+            className={`p-4 rounded-lg border-2 ${
+              !restroom.requiresWildcard
+                ? "bg-green-50 border-green-300"
+                : "bg-gray-50 border-gray-300"
+            }`}
+          >
             <div className="text-2xl mb-1">🔓</div>
             <div className="text-sm font-medium">
-              {restroom.requiresWildcard ? 'Requires Wildcard' : 'No Wildcard Needed'}
+              {restroom.requiresWildcard
+                ? "Requires Wildcard"
+                : "No Wildcard Needed"}
             </div>
           </div>
         </div>
@@ -116,6 +157,26 @@ const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onRep
           <p className="text-gray-700 bg-blue-50 p-4 rounded-lg">
             {restroom.accessibilityNotes}
           </p>
+        </div>
+      )}
+
+      {/* Operating Hours */}
+      {(restroom.hours || restroom.wildcardHours) && (
+        <div className="mb-6">
+          <h2 className="font-semibold text-gray-900 mb-2">Operating Hours</h2>
+          <div className="space-y-1 text-sm text-gray-700">
+            {restroom.hours && (
+              <p>
+                <strong>Open (no wildcard):</strong> {restroom.hours}
+              </p>
+            )}
+            {restroom.wildcardHours && (
+              <p>
+                <strong>Open (requires wildcard):</strong>{" "}
+                {restroom.wildcardHours}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -133,9 +194,14 @@ const RestroomDetail = ({ restroom, reviews, issues, onClose, onAddReview, onRep
         {issues.length > 0 ? (
           <div className="space-y-3">
             {issues.map((issue) => (
-              <div key={issue.id} className="bg-red-50 border border-red-100 p-3 rounded-lg">
+              <div
+                key={issue.id}
+                className="bg-red-50 border border-red-100 p-3 rounded-lg"
+              >
                 <div className="flex justify-between items-start">
-                  <p className="text-gray-800 text-sm flex-1">{issue.description}</p>
+                  <p className="text-gray-800 text-sm flex-1">
+                    {issue.description}
+                  </p>
                   {issue.isResolved ? (
                     <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded ml-2 whitespace-nowrap">
                       ✅ Resolved

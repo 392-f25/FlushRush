@@ -16,6 +16,10 @@ export interface Restroom {
   requiresWildcard: boolean;
   photoUrls?: string[];
   accessibilityNotes?: string;
+  // Optional
+  hours?: string;
+  // Optional (wildcard required hours)
+  wildcardHours?: string;
   status: 'open' | 'closed' | 'cleaning' | 'blocked';
   lastUpdated: Date;
 }
